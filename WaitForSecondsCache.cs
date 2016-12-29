@@ -9,43 +9,71 @@ public class WaitForSecondsCache
     const int fractionalPartMultiplicand = 100;
 
     static LinkedList<int> cacheQueue = new LinkedList<int>();
-    static Dictionary<int, Stack<WaitForSeconds>> cache = new Dictionary<int, Stack<WaitForSeconds>>(cacheSize);
+    static Dictionary<int, WaitForSeconds> cache = new Dictionary<int, WaitForSeconds>(cacheSize);
 
-    public static IEnumerator Wait(float waitingTime)
+    public static WaitForSeconds Wait(float waitingTime)
     {
         WaitForSeconds unit = null;
-        Stack<WaitForSeconds> unitList = null;
         int clippedNumber = (int)(fractionalPartMultiplicand * waitingTime);
 
-        cache.TryGetValue(clippedNumber, out unitList);
-        if (unitList == null)
+        cache.TryGetValue(clippedNumber, out unit);
+        if (unit == null)
         {
             if (cache.Count >= cacheSize)
             {
-                cache.TryGetValue(cacheQueue.Last.Value, out unitList);
                 cache.Remove(cacheQueue.Last.Value);
                 cacheQueue.RemoveLast();
-                unitList.Clear();
             }
-            else unitList = new Stack<WaitForSeconds>(unitSize);
-
-            cache.Add(clippedNumber, unitList);
+            unit = new WaitForSeconds(waitingTime);
+            cache.Add(clippedNumber, unit);
         }
 
-        if (unitList.Count == 0) unit = new WaitForSeconds(waitingTime);
-        else unit = unitList.Pop();
         if (cacheQueue.Count == 0) cacheQueue.AddFirst(clippedNumber);
         else MoveToTop(clippedNumber);
 
-        yield return unit;
-
-        cache.TryGetValue(clippedNumber, out unitList);
-        if (unitList != null && unitList.Count < unitSize) unitList.Push(unit);
+        return unit;
     }
+
+#if UNITY_5_4_OR_NEWER
+    static LinkedList<int> realTimeCacheQueue = new LinkedList<int>();
+    static Dictionary<int, WaitForSecondsRealtime> realTimeCache = new Dictionary<int, WaitForSecondsRealtime>(cacheSize);
+
+    public static WaitForSecondsRealtime WaitForRealTime(float waitingTime)
+    {
+        WaitForSecondsRealtime unit = null;
+        int clippedNumber = (int)(fractionalPartMultiplicand * waitingTime);
+
+        realTimeCache.TryGetValue(clippedNumber, out unit);
+        if (unit == null)
+        {
+            if (realTimeCache.Count >= cacheSize)
+            {
+                realTimeCache.Remove(realTimeCacheQueue.Last.Value);
+                realTimeCacheQueue.RemoveLast();
+            }
+            unit = new WaitForSecondsRealtime(waitingTime);
+            realTimeCache.Add(clippedNumber, unit);
+        }
+
+        if (realTimeCacheQueue.Count == 0) realTimeCacheQueue.AddFirst(clippedNumber);
+        else MoveToTop(clippedNumber);
+
+        return unit;
+    }
+#endif
 
     static void MoveToTop(int elementValue)
     {
-        var existElement = cacheQueue.Find(elementValue);
+        LinkedListNode<int> existElement = null;
+        existElement = cacheQueue.First;
+
+        do
+        {
+            if (existElement.Value == elementValue)
+                break;
+            existElement = existElement.Next;
+        }
+        while (existElement != null);
 
         if (existElement != null)
         {
