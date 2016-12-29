@@ -4,7 +4,6 @@ using System.Collections.Generic;
 
 public class WaitForSecondsCache
 {
-    const int unitSize = 8;
     const int cacheSize = 64;
     const int fractionalPartMultiplicand = 100;
 
