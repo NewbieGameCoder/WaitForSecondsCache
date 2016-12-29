@@ -29,7 +29,7 @@ public class WaitForSecondsCache
         }
 
         if (cacheQueue.Count == 0) cacheQueue.AddFirst(clippedNumber);
-        else MoveToTop(clippedNumber);
+        else MoveToTop(clippedNumber, cacheQueue);
 
         return unit;
     }
@@ -56,13 +56,13 @@ public class WaitForSecondsCache
         }
 
         if (realTimeCacheQueue.Count == 0) realTimeCacheQueue.AddFirst(clippedNumber);
-        else MoveToTop(clippedNumber);
+        else MoveToTop(clippedNumber, realTimeCacheQueue);
 
         return unit;
     }
 #endif
 
-    static void MoveToTop(int elementValue)
+    static void MoveToTop(int elementValue, LinkedList<int> cacheQueue)
     {
         LinkedListNode<int> existElement = null;
         existElement = cacheQueue.First;
